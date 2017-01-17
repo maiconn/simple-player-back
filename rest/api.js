@@ -1,5 +1,5 @@
-const PATH = 'C:\\simple-player-front\\',
-	  ROOT = 'musicas',
+const PATH = 'D:\\',
+	  ROOT = 'Musicas',
 	  ROOT_PATH = PATH + ROOT;
 
 // funções auxiliares
@@ -22,85 +22,10 @@ var path       	= require('path');
 
 var mongo 	   	= require('mongodb');
 var monk 	   	= require('monk');
-var db         	= monk('localhost:27017/simpleplayer');
-
-var jsmediatags = require("jsmediatags");
-var id3 = require('id3js');
+var db         	= monk('localhost:27017/test');
 
 module.exports = function(router) {
-
-	function lerAndSalvarMp3(arquivo, salvarNoMongo){
-		id3({ file: arquivo, type: id3.OPEN_LOCAL }, function(err, tags) {
-			console.log(err);
-		    salvarMp3({arquivo: arquivo, tags: tags})
-		});
-
-
-		//tags = jsmediatags.readSync(arquivo);
-		
-		/*jsmediatags.read(arquivo, {
-		  onSuccess: function(tag) {
-		  	//console.log("arquivo: "+ arquivo +" OK");
-		    salvarMp3({arquivo: arquivo, tags: tag });
-		  },
-		  onError: function(error) {
-		  	console.log("arquivo: "+arquivo+" erro:"+ JSON.stringify(error));
-		  	salvarMp3({arquivo: arquivo}); return;
-		  }
-		});*/
-	}
-
-	function salvarMp3(mp3, arquivo){
-		console.log("salvando: "+arquivo);
-		const musicasCollection = db.get('musicas');
-		musicasCollection.insert(mp3);
-	}
-
-	function recuperarTodosMp3(){
-		const musicasCollection = db.get('musicas');
-		musicasCollection.find({}, function (err, docs){ 
-			res.json(docs);
-		});
-	}
-
-	/**
-	  * Função responsável por carregar todos os arquivos mp3 no banco de dados mongobd
-	  */
-	function salvarNoMongo(pasta){
-		fs.readdirSync(pasta).forEach((elem, idx, array) => {
-			var filho = pasta + "/" + elem;
-			if(fs.lstatSync(filho).isDirectory()){
-				console.log('importando: '+ elem);
-				salvarNoMongo(filho);
-			} else if(filho.toUpperCase().endsWith(".MP3")){
-				lerAndSalvarMp3(filho, salvarMp3);
-			}
-		});
-	}
-
-	/**
-	  * Função responsável por carregar todos os arquivos mp3 no banco de dados mongobd
-	  */
-	function recuperarArquivosMp3(pasta){
-		var listaMp3 = [];
-		fs.readdirSync(pasta).forEach(elem => {
-			var filho = pasta + "/" + elem;
-
-
-			if(fs.lstatSync(filho).isDirectory()){
-				listaMp3 = listaMp3.concat(recuperarArquivosMp3(filho));
-
-			// é um mp3 ?
-			} else if(filho.toUpperCase().endsWith(".MP3")){
-				listaMp3.push({
-					arquivo : filho
-				});
-			}
-		});
-		return listaMp3;
-	}
-
-  	router.get('/pasta', function(req, res) {
+	router.get('/pasta', function(req, res) {
 		var caminho = req.query.p;
 
 		var diretorio = ROOT_PATH + caminho;
@@ -171,19 +96,9 @@ module.exports = function(router) {
 	});
 
 	router.get('/mongo', function(req, res) {
-		const tabela = db.get('tabela');
-		tabela.insert({nome: 'simpleplayer'});
-		tabela.find({}, function (err, docs){ 
+		const musicasCollection = db.get('musicas');
+		musicasCollection.find({}, function (err, docs){ 
 			res.json(docs);
 		});
-	});
-
-	router.get('/salvarmp3', function(req, res) {
-		salvarNoMongo(ROOT_PATH+"\\Sertanejo");
-		res.json("ok");
-	});
-
-	router.get('/arquivosmp3', function(req, res) {
-		res.json(recuperarArquivosMp3(ROOT_PATH+"\\Bandas\\ACDC"));
 	});
 };
